@@ -1,0 +1,69 @@
+name: MiSTer Release Database
+description: >
+  Builds a MiSTer Downloader custom database from the newest matching GitHub
+  release asset and publishes it to an orphan branch, following
+  https://github.com/MiSTer-devel/Downloader_MiSTer/blob/main/docs/custom-databases.md
+
+inputs:
+  token:
+    description: GitHub token with contents write permission on this repository
+    required: true
+  asset-pattern:
+    description: Glob selecting the release asset to install, e.g. "MegaDrive_Paprium_*.rbf"
+    required: true
+  asset-install-dir:
+    description: Directory relative to /media/fat where the asset is installed, e.g. "_Custom Cores/Cores"
+    required: true
+  asset-tangle:
+    description: Optional entanglement tag, so users keep the previous core if a new download fails
+    default: ''
+  extra-files:
+    description: |
+      Newline-separated "repo/path => install/path" entries. Sources are read from
+      the repository checkout and served via raw URLs pinned to the current commit.
+    default: ''
+  reboot-paths:
+    description: Newline-separated install paths that require a reboot after installation
+    default: ''
+  pext-folders:
+    description: Newline-separated folders created as potentially-external paths (installable on external storage)
+    default: ''
+  source-repo:
+    description: Repository (owner/name) whose releases hold the asset. Defaults to the current repository.
+    default: ''
+  release-tag:
+    description: Release tag to build from. Defaults to the latest release.
+    default: ''
+  db-id:
+    description: Database ID. Must never change once published. Defaults to the lowercased current repository.
+    default: ''
+  db-branch:
+    description: Orphan branch where the database is published
+    default: db
+  run-downloader-test:
+    description: Validate the database with a real downloader run before publishing
+    default: 'true'
+  dry-run:
+    description: Build and test the database, but do not push it
+    default: 'false'
+
+runs:
+  using: composite
+  steps:
+    - name: Build and publish database
+      shell: bash
+      run: python3 "$GITHUB_ACTION_PATH/build_release_db.py"
+      env:
+        GITHUB_TOKEN: ${{ inputs.token }}
+        ASSET_PATTERN: ${{ inputs.asset-pattern }}
+        ASSET_INSTALL_DIR: ${{ inputs.asset-install-dir }}
+        ASSET_TANGLE: ${{ inputs.asset-tangle }}
+        EXTRA_FILES: ${{ inputs.extra-files }}
+        REBOOT_PATHS: ${{ inputs.reboot-paths }}
+        PEXT_FOLDERS: ${{ inputs.pext-folders }}
+        SOURCE_REPO: ${{ inputs.source-repo }}
+        RELEASE_TAG: ${{ inputs.release-tag }}
+        DB_ID: ${{ inputs.db-id }}
+        DB_BRANCH: ${{ inputs.db-branch }}
+        RUN_DOWNLOADER_TEST: ${{ inputs.run-downloader-test }}
+        DRY_RUN: ${{ inputs.dry-run }}

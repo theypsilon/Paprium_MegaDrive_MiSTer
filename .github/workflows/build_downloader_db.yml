@@ -1,0 +1,47 @@
+name: Build Downloader DB
+
+on:
+  release:
+    types: [published]
+  push:
+    branches:
+      - paprium-mdplus-port
+    paths:
+      - .github/downloader-db/**
+      - .github/actions/mister-release-db/**
+      - .github/workflows/build_downloader_db.yml
+  workflow_dispatch:
+    inputs:
+      release-tag:
+        description: Release tag to build from (defaults to the latest release)
+        required: false
+        default: ''
+
+permissions:
+  contents: write
+
+concurrency:
+  group: build-downloader-db
+  cancel-in-progress: false
+
+jobs:
+  build_db:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build Custom Database for MiSTer Downloader
+        uses: ./.github/actions/mister-release-db
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          release-tag: ${{ inputs.release-tag || '' }}
+          asset-pattern: MegaDrive_Paprium_*.rbf
+          asset-install-dir: _Custom Cores/Cores
+          asset-tangle: paprium_megadrive_core
+          extra-files: |
+            .github/downloader-db/PapriumMD.mgl => _Custom Cores/PapriumMD.mgl
+          reboot-paths: |
+            _Custom Cores/PapriumMD.mgl
+          pext-folders: |
+            games
+            games/PapriumMD
