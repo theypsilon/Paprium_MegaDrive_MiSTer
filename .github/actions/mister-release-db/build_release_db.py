@@ -32,10 +32,12 @@ import subprocess
 import sys
 import tempfile
 import time
+import traceback
 import urllib.error
 import urllib.parse
 import urllib.request
 import zipfile
+from datetime import datetime, timezone
 
 USER_AGENT = 'mister-release-db'
 
@@ -101,6 +103,8 @@ def main() -> int:
         return 0
 
     push_database(db_branch, drop_in_files, f"Database for {source_repo} {release['tag_name']} ({asset['name']})")
+    if os.getenv('TRACK_RELEASE', 'true').strip().lower() != 'false':
+        track_release(db_branch)
     log(f'Done. Database published at: {db_url}')
     return 0
 
@@ -218,6 +222,34 @@ def push_database(db_branch, drop_in_files, message):
     run(['git', 'add', '-f', 'db.json.zip', *drop_in_files])
     run(['git', 'commit', '-m', message])
     run(['git', 'push', '--force', 'origin', db_branch])
+
+
+def track_release(db_branch):
+    # The db branch is force-pushed, so its history is lost on every update. This
+    # appends each published db commit to a log branch, keeping old database
+    # versions addressable at raw.githubusercontent.com/<repo>/<commit>/db.json.zip
+    releases_branch = f'{db_branch}-releases'
+    try:
+        log(f"Tracking release on branch '{releases_branch}'...")
+        db_commit = run_stdout(['git', 'rev-parse', 'HEAD'])
+
+        if run_stdout(['git', 'ls-remote', '--heads', 'origin', releases_branch]) != '':
+            run(['git', 'fetch', '--depth=1', 'origin', releases_branch])
+            run(['git', 'checkout', '-B', releases_branch, 'FETCH_HEAD'])
+        else:
+            run(['git', 'checkout', '--orphan', releases_branch])
+            run(['git', 'reset'])
+
+        timestamp = datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S UTC')
+        with open('commits.txt', 'a', encoding='utf-8', newline='\n') as f:
+            f.write(f'{timestamp}: {db_commit}\n')
+
+        run(['git', 'add', 'commits.txt'])
+        run(['git', 'commit', '-m', f'Track release {db_commit}'])
+        run(['git', 'push', 'origin', releases_branch])
+    except Exception as e:
+        log(f'Warning: Failed to track release: {e}')
+        log(traceback.format_exc())
 
 
 ## HELPERS

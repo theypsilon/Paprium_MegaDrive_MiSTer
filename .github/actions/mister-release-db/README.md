@@ -23,6 +23,10 @@ How it works:
    as potentially-external paths, and `reboot-paths` are flagged to request a reboot.
 4. Before publishing, the database is validated with a real run of the actual
    downloader (`run-downloader-test`).
+5. Since the db branch is force-pushed, every published db commit is also logged
+   with a timestamp in `commits.txt` on a `<db-branch>-releases` branch
+   (`track-release`), keeping old database versions addressable at
+   `https://raw.githubusercontent.com/<owner>/<repo>/<commit>/db.json.zip`.
 
 See `action.yml` for all inputs. The action is self-contained in this directory
 (`action.yml` + `build_release_db.py`), so it can be extracted to its own repository

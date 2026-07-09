@@ -43,6 +43,9 @@ inputs:
   run-downloader-test:
     description: Validate the database with a real downloader run before publishing
     default: 'true'
+  track-release:
+    description: Log every published db commit on a "<db-branch>-releases" branch, keeping old database versions addressable
+    default: 'true'
   dry-run:
     description: Build and test the database, but do not push it
     default: 'false'
@@ -66,4 +69,5 @@ runs:
         DB_ID: ${{ inputs.db-id }}
         DB_BRANCH: ${{ inputs.db-branch }}
         RUN_DOWNLOADER_TEST: ${{ inputs.run-downloader-test }}
+        TRACK_RELEASE: ${{ inputs.track-release }}
         DRY_RUN: ${{ inputs.dry-run }}
